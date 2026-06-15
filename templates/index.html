@@ -760,7 +760,7 @@ function openProject() {
 }
 
 async function saveProject() {
-  if (state.name === '未命名项目' && !document.querySelector('.modal-overlay.open')) {
+  if (!state._save_path) {
     showModal('保存项目', `
       <div class="form-group"><label>保存路径</label><div style="display:flex;gap:6px"><input type="text" id="modalSavePath" placeholder="例如: D:/myproject.json" style="flex:1" /><button onclick="browseModalPath('.json','modalSavePath','__${esc(state.name)}')" style="flex-shrink:0;height:34px;padding:0 12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">浏览...</button></div></div>
       <div class="text-muted">项目将以 JSON 格式保存</div>
@@ -770,6 +770,7 @@ async function saveProject() {
       const res = await api('POST', '/api/project', { action: 'save', path });
       if (res.error) { toast(res.error, 'error'); closeModal(); return; }
       closeModal();
+      state._save_path = path;
       document.getElementById('projectTitle').textContent = '- ' + path.split('\\').pop().split('/').pop();
       toast('项目已保存', 'success');
     });

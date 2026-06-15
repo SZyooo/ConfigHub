@@ -110,7 +110,9 @@ def handle_project():
     global project, project_path
 
     if request.method == 'GET':
-        return jsonify(project)
+        resp = dict(project)
+        resp['_save_path'] = project_path or ''
+        return jsonify(resp)
 
     data = request.get_json(force=True)
     action = data.get('action')
