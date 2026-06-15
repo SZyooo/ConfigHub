@@ -79,10 +79,13 @@ def export_config(config):
                     })
 
     lines = []
-    for item in cfg_copy.get("items", []):
-        if item.get("description"):
-            lines.append(f"; {item['description']}")
-        lines.append(f"{item['key']} = {item['value']}")
+    default_sec = cfg_copy.get("default_section", "") or "全局"
+    if cfg_copy.get("items"):
+        lines.append(f"[{default_sec}]")
+        for item in cfg_copy.get("items", []):
+            if item.get("description"):
+                lines.append(f"; {item['description']}")
+            lines.append(f"{item['key']} = {item['value']}")
         lines.append("")
     for section in cfg_copy.get("sections", []):
         lines.append(f"[{section['name']}]")
