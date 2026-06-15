@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>配置管理器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;height:100vh;display:flex;flex-direction:column;background:#f1f5f9;color:#1e293b}
+header{height:52px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0}
+header h1{font-size:16px;font-weight:600;color:#0f172a;display:flex;align-items:center;gap:8px}
+header h1 span{color:#94a3b8;font-weight:400;font-size:13px;margin-left:4px}
+.header-actions{display:flex;gap:8px}
+.header-actions button{height:32px;padding:0 14px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;transition:all .15s}
+.header-actions button:hover{background:#f1f5f9;border-color:#cbd5e1}
+.header-actions .btn-primary{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.header-actions .btn-primary:hover{background:#2563eb}
+.header-actions .btn-success{background:#22c55e;color:#fff;border-color:#22c55e}
+.header-actions .btn-success:hover{background:#16a34a}
+.header-actions .btn-danger{background:#ef4444;color:#fff;border-color:#ef4444}
+.header-actions .btn-danger:hover{background:#dc2626}
+main{flex:1;display:flex;overflow:hidden}
+#sidebar{width:280px;background:#1e293b;color:#cbd5e1;display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-header{padding:14px 16px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #334155}
+#tree{flex:1;overflow-y:auto;padding:8px 0}
+#tree ul{list-style:none;padding-left:20px}
+#tree>ul{padding-left:0}
+.tree-item{display:flex;align-items:center;padding:6px 16px;cursor:pointer;font-size:13px;border-radius:0;transition:background .1s;gap:6px;user-select:none;white-space:nowrap}
+.tree-item:hover{background:#334155}
+.tree-item.active{background:#3b82f6;color:#fff}
+.tree-item .icon{flex-shrink:0;font-size:14px;width:18px;text-align:center}
+.tree-item .label{overflow:hidden;text-overflow:ellipsis}
+.tree-item .expand{width:16px;cursor:pointer;text-align:center;flex-shrink:0;font-size:10px;color:#64748b;transition:transform .15s}
+.tree-item .expand.open{transform:rotate(90deg)}
+.tree-item .badge{font-size:10px;background:#334155;color:#94a3b8;padding:1px 6px;border-radius:4px;margin-left:auto;flex-shrink:0}
+.tree-item.active .badge{background:#2563eb;color:#fff}
+#detail{flex:1;overflow-y:auto;padding:24px;background:#f8fafc}
+.detail-card{background:#fff;border-radius:8px;border:1px solid #e2e8f0;padding:24px;max-width:800px}
+.detail-card h2{font-size:18px;font-weight:600;margin-bottom:4px}
+.detail-card .subtitle{font-size:13px;color:#64748b;margin-bottom:20px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;outline:none;transition:border-color .15s}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-row{display:flex;gap:12px}
+.form-row .form-group{flex:1}
+.empty-state{text-align:center;padding:60px 20px;color:#94a3b8}
+.empty-state h3{font-size:16px;margin-bottom:8px;color:#64748b}
+.empty-state p{font-size:13px}
+.items-table{width:100%;border-collapse:collapse;margin-top:12px}
+.items-table th{text-align:left;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;padding:8px 12px;border-bottom:2px solid #e2e8f0}
+.items-table td{padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:13px}
+.items-table tr:hover td{background:#f8fafc}
+.items-table .actions{display:flex;gap:4px}
+.items-table .actions button{padding:4px 8px;border:1px solid #e2e8f0;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;transition:all .1s}
+.items-table .actions button:hover{background:#f1f5f9}
+.items-table .actions .del:hover{background:#fef2f2;border-color:#fecaca;color:#dc2626}
+.section-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.section-card{border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}
+.section-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#f8fafc;cursor:pointer;font-size:13px;font-weight:500}
+.section-header:hover{background:#f1f5f9}
+.section-header .sec-actions{display:flex;gap:4px}
+.section-header .sec-actions button{padding:2px 8px;border:1px solid #e2e8f0;border-radius:4px;background:#fff;cursor:pointer;font-size:11px}
+.section-header .sec-actions .del-sec:hover{background:#fef2f2;border-color:#fecaca;color:#dc2626}
+.section-body{padding:12px 16px;border-top:1px solid #e2e8f0}
+.shared-grid{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.shared-card{border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;cursor:pointer;transition:all .1s}
+.shared-card:hover{border-color:#3b82f6;box-shadow:0 0 0 1px #3b82f6}
+.shared-card .sc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.shared-card .sc-key{font-weight:600;font-size:14px}
+.shared-card .sc-value{font-size:13px;color:#64748b}
+.shared-card .sc-targets{font-size:11px;color:#94a3b8;margin-top:4px}
+.shared-card .sc-section{font-size:11px;color:#94a3b8}
+.add-btn{display:inline-flex;align-items:center;gap:4px;padding:8px 16px;margin-top:12px;border:1px dashed #cbd5e1;border-radius:6px;background:transparent;cursor:pointer;font-size:13px;color:#64748b;transition:all .15s}
+.add-btn:hover{border-color:#3b82f6;color:#3b82f6;background:#f0f7ff}
+.add-btn-sm{padding:4px 10px;font-size:12px;margin-top:8px}
+.checkbox-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.checkbox-group label{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:6px 12px;border:1px solid #e2e8f0;border-radius:6px;transition:all .1s}
+.checkbox-group label:hover{background:#f8fafc}
+.checkbox-group label.checked{border-color:#3b82f6;background:#eff6ff}
+.checkbox-group input[type="checkbox"]{display:none}
+/* Modal */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal-overlay.open{display:flex}
+.modal-box{background:#fff;border-radius:12px;width:480px;max-width:90vw;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-header{padding:16px 20px;border-bottom:1px solid #e2e8f0;font-size:15px;font-weight:600}
+.modal-body{padding:20px}
+.modal-footer{padding:12px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px}
+.modal-footer button{padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;transition:all .1s}
+.modal-footer .btn-cancel{border:1px solid #e2e8f0;background:#fff}
+.modal-footer .btn-cancel:hover{background:#f1f5f9}
+.modal-footer .btn-confirm{border:none;background:#3b82f6;color:#fff}
+.modal-footer .btn-confirm:hover{background:#2563eb}
+/* Toast */
+.toast-container{position:fixed;top:16px;right:16px;z-index:2000;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;background:#1e293b;color:#fff;border-radius:8px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.15);animation:slideIn .2s ease;max-width:360px}
+.toast.error{background:#dc2626}
+.toast.success{background:#16a34a}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+/* Utility */
+.mt-8{margin-top:8px}
+.mt-16{margin-top:16px}
+.text-muted{color:#94a3b8;font-size:12px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>&#128451; 配置管理器 <span id="projectTitle">- 未命名项目</span></h1>
+  <div class="header-actions">
+    <button onclick="newProject()">&#10010; 新建</button>
+    <button onclick="openProject()">&#128194; 打开</button>
+    <button onclick="saveProject()">&#128190; 保存</button>
+    <button class="btn-primary" onclick="exportProject()">&#128228; 导出</button>
+  </div>
+</header>
+
+<main>
+  <aside id="sidebar">
+    <div class="sidebar-header">&#128269; 配置浏览</div>
+    <div id="tree"></div>
+  </aside>
+  <section id="detail"></section>
+</main>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-header" id="modalTitle"></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// =====================================================================
+// State
+// =====================================================================
+let state = null;
+let sel = { type: 'project' };
+
+// =====================================================================
+// API Helper
+// =====================================================================
+async function api(method, url, data) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (data) opts.body = JSON.stringify(data);
+  const res = await fetch(url, opts);
+  return res.json();
+}
+
+// =====================================================================
+// Toast
+// =====================================================================
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+// =====================================================================
+// Modal
+// =====================================================================
+function showModal(title, bodyHTML, confirmText, onConfirm) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = bodyHTML;
+  const footer = document.getElementById('modalFooter');
+  footer.innerHTML = `
+    <button class="btn-cancel" onclick="closeModal()">取消</button>
+    <button class="btn-confirm" id="modalConfirmBtn">${confirmText || '确定'}</button>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('modalConfirmBtn').onclick = async () => {
+    const btn = document.getElementById('modalConfirmBtn');
+    btn.disabled = true;
+    btn.textContent = '处理中...';
+    try { await onConfirm(); } catch (e) { toast('操作失败: ' + e.message, 'error'); }
+    btn.disabled = false;
+    btn.textContent = confirmText || '确定';
+  };
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+// =====================================================================
+// Selection
+// =====================================================================
+function selectProject() { sel = { type: 'project' }; render(); }
+function selectConfig(name) { sel = { type: 'config', config: name }; render(); }
+function selectSection(config, section) { sel = { type: 'section', config, section }; render(); }
+function selectItem(config, key, section) { sel = { type: 'item', config, key, section: section || null }; render(); }
+function selectSharedList() { sel = { type: 'shared-list' }; render(); }
+function selectSharedItem(key) { sel = { type: 'shared-item', key }; render(); }
+
+// =====================================================================
+// Tree Rendering
+// =====================================================================
+function renderTree() {
+  let html = '<ul>';
+  const isActive = t => sel.type === t || (sel.type === 'project' && t === 'project');
+  html += `<li><div class="tree-item ${isActive('project') ? 'active' : ''}" onclick="selectProject()">
+    <span class="icon">&#128451;</span><span class="label">${esc(state.name)}</span>
+    <span class="badge">${state.configs.length} 配置</span>
+  </div>`;
+
+  if (state.configs.length || state.shared_items.length) {
+    html += '<ul>';
+    for (const cfg of state.configs) {
+      const cActive = sel.type === 'config' && sel.config === cfg.name;
+      const cExpand = sel.type === 'config' && sel.config === cfg.name;
+      html += `<li><div class="tree-item ${cActive ? 'active' : ''}" onclick="selectConfig('${esc(cfg.name)}')">
+        <span class="icon">&#128196;</span><span class="label">${esc(cfg.name)}</span>
+        <span class="badge">${(cfg.items||[]).length + (cfg.sections||[]).length}</span>
+      </div>`;
+      if (cExpand && (cfg.sections?.length || cfg.items?.length)) {
+        html += '<ul>';
+        for (const sec of (cfg.sections || [])) {
+          const sActive = sel.type === 'section' && sel.config === cfg.name && sel.section === sec.name;
+          html += `<li><div class="tree-item ${sActive ? 'active' : ''}" onclick="selectSection('${esc(cfg.name)}','${esc(sec.name)}')">
+            <span class="icon">&#128193;</span><span class="label">${esc(sec.name)}</span>
+            <span class="badge">${(sec.items||[]).length}</span>
+          </div>`;
+          if (sActive && sec.items?.length) {
+            html += '<ul>';
+            for (const item of sec.items) {
+              html += `<li><div class="tree-item ${sel.type==='item'&&sel.config===cfg.name&&sel.key===item.key&&sel.section===sec.name?'active':''}" onclick="selectItem('${esc(cfg.name)}','${esc(item.key)}','${esc(sec.name)}')">
+                <span class="icon">&#128273;</span><span class="label">${esc(item.key)} = ${esc(trunc(item.value))}</span>
+              </div></li>`;
+            }
+            html += '</ul>';
+          }
+          html += '</li>';
+        }
+        for (const item of (cfg.items || [])) {
+          html += `<li><div class="tree-item ${sel.type==='item'&&sel.config===cfg.name&&sel.key===item.key&&!sel.section?'active':''}" onclick="selectItem('${esc(cfg.name)}','${esc(item.key)}',null)">
+            <span class="icon">&#128273;</span><span class="label">${esc(item.key)} = ${esc(trunc(item.value))}</span>
+          </div></li>`;
+        }
+        html += '</ul>';
+      }
+      html += '</li>';
+    }
+    if (state.shared_items?.length) {
+      const sActive = sel.type === 'shared-list' || sel.type === 'shared-item';
+      html += `<li><div class="tree-item ${sActive ? 'active' : ''}" onclick="selectSharedList()">
+        <span class="icon">&#128279;</span><span class="label">共享配置项</span>
+        <span class="badge">${state.shared_items.length}</span>
+      </div>`;
+      if (sActive && sel.type === 'shared-item') {
+        html += '<ul>';
+        for (const si of state.shared_items) {
+          html += `<li><div class="tree-item ${sel.key===si.key?'active':''}" onclick="selectSharedItem('${esc(si.key)}')">
+            <span class="icon">&#128273;</span><span class="label">${esc(si.key)} = ${esc(trunc(si.value))}</span>
+          </div></li>`;
+        }
+        html += '</ul>';
+      }
+      html += '</li>';
+    }
+    html += '</ul>';
+  }
+  html += '</li></ul>';
+  document.getElementById('tree').innerHTML = html;
+}
+
+// =====================================================================
+// Detail Panel
+// =====================================================================
+function renderDetail() {
+  const el = document.getElementById('detail');
+  switch (sel.type) {
+    case 'project': el.innerHTML = renderProjectDetail(); break;
+    case 'config': el.innerHTML = renderConfigDetail(); break;
+    case 'section': el.innerHTML = renderSectionDetail(); break;
+    case 'item': el.innerHTML = renderItemDetail(); break;
+    case 'shared-list': el.innerHTML = renderSharedList(); break;
+    case 'shared-item': el.innerHTML = renderSharedItemDetail(); break;
+    default: el.innerHTML = '<div class="empty-state"><h3>选择一个配置</h3><p>从左侧树中选择项目或配置进行编辑</p></div>';
+  }
+}
+
+function renderProjectDetail() {
+  return `<div class="detail-card">
+    <h2>&#128451; 项目设置</h2>
+    <p class="subtitle">管理项目名称和所有配置</p>
+    <div class="form-group">
+      <label>项目名称</label>
+      <input type="text" value="${esc(state.name)}" onchange="updateProjectName(this.value)" />
+    </div>
+    <div class="form-row mt-16">
+      <div class="form-group">
+        <label>配置数</label>
+        <div style="padding:8px 0;font-size:24px;font-weight:600;color:#3b82f6">${state.configs.length}</div>
+      </div>
+      <div class="form-group">
+        <label>共享配置项</label>
+        <div style="padding:8px 0;font-size:24px;font-weight:600;color:#3b82f6">${(state.shared_items||[]).length}</div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="showNewConfigModal()">&#10010; 添加配置</button>
+    <button class="add-btn" onclick="showNewSharedModal()" style="margin-left:8px">&#10010; 添加共享配置项</button>
+  </div>`;
+}
+
+function renderConfigDetail() {
+  const cfg = state.configs.find(c => c.name === sel.config);
+  if (!cfg) return '<div class="empty-state"><h3>配置未找到</h3></div>';
+  const items = cfg.items || [];
+  const sections = cfg.sections || [];
+  let itemsHtml = items.length ? '' : '<div class="text-muted" style="padding:8px 0">暂无配置项</div>';
+  if (items.length) {
+    itemsHtml = `<table class="items-table"><tr><th>键</th><th>值</th><th>描述</th><th></th></tr>`;
+    for (const item of items) {
+      itemsHtml += `<tr>
+        <td><b>${esc(item.key)}</b></td>
+        <td>${esc(item.value)}</td>
+        <td class="text-muted">${esc(item.description||'')}</td>
+        <td><div class="actions">
+          <button onclick="selectItem('${esc(cfg.name)}','${esc(item.key)}',null)">&#9998;</button>
+          <button class="del" onclick="deleteItem('${esc(cfg.name)}','${esc(item.key)}',null)">&#10005;</button>
+        </div></td>
+      </tr>`;
+    }
+    itemsHtml += '</table>';
+  }
+  let secHtml = '';
+  for (const sec of sections) {
+    const sItems = sec.items || [];
+    let sItemsHtml = sItems.length ? `<table class="items-table"><tr><th>键</th><th>值</th><th>描述</th><th></th></tr>` : '<div class="text-muted" style="padding:8px 0">暂无配置项</div>';
+    for (const item of sItems) {
+      sItemsHtml += sItems.length ? `<tr>
+        <td><b>${esc(item.key)}</b></td>
+        <td>${esc(item.value)}</td>
+        <td class="text-muted">${esc(item.description||'')}</td>
+        <td><div class="actions">
+          <button onclick="selectItem('${esc(cfg.name)}','${esc(item.key)}','${esc(sec.name)}')">&#9998;</button>
+          <button class="del" onclick="deleteItem('${esc(cfg.name)}','${esc(item.key)}','${esc(sec.name)}')">&#10005;</button>
+        </div></td>
+      </tr>` : '';
+    }
+    sItemsHtml += sItems.length ? '</table>' : '';
+    secHtml += `<div class="section-card">
+      <div class="section-header">
+        <span>&#128193; <b>${esc(sec.name)}</b> ${sec.description ? '- ' + esc(sec.description) : ''}</span>
+        <span class="sec-actions">
+          <button onclick="selectSection('${esc(cfg.name)}','${esc(sec.name)}')">&#9998; 编辑</button>
+          <button class="del-sec" onclick="deleteSection('${esc(cfg.name)}','${esc(sec.name)}')">&#128465; 删除</button>
+        </span>
+      </div>
+      <div class="section-body">
+        ${sItemsHtml}
+        <button class="add-btn add-btn-sm" onclick="showNewItemModal('${esc(cfg.name)}','${esc(sec.name)}')">&#10010; 添加配置项</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="detail-card">
+    <h2>&#128196; ${esc(cfg.name)}</h2>
+    <p class="subtitle">配置设置</p>
+    <div class="form-group">
+      <label>配置名称</label>
+      <input type="text" value="${esc(cfg.name)}" onchange="updateConfig('${esc(cfg.name)}',{name:this.value})" />
+    </div>
+    <div class="form-group">
+      <label>保存路径</label>
+      <input type="text" value="${esc(cfg.save_path||'')}" placeholder="例如: D:/server.ini" onchange="updateConfig('${esc(cfg.name)}',{save_path:this.value})" />
+    </div>
+    <div class="form-group">
+      <label>描述</label>
+      <textarea onchange="updateConfig('${esc(cfg.name)}',{description:this.value})">${esc(cfg.description||'')}</textarea>
+    </div>
+    <div style="margin-top:20px">
+      <h3 style="font-size:14px;margin-bottom:4px">配置项</h3>
+      ${itemsHtml}
+      <button class="add-btn add-btn-sm" onclick="showNewItemModal('${esc(cfg.name)}',null)">&#10010; 添加配置项</button>
+    </div>
+    <div style="margin-top:24px">
+      <h3 style="font-size:14px;margin-bottom:4px">节 (Sections)</h3>
+      ${secHtml || '<div class="text-muted" style="padding:8px 0">暂无节</div>'}
+      <button class="add-btn add-btn-sm" onclick="showNewSectionModal('${esc(cfg.name)}')">&#10010; 添加节</button>
+    </div>
+    <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0">
+      <button class="btn-danger" style="height:32px;padding:0 14px;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:13px" onclick="deleteConfig('${esc(cfg.name)}')">&#128465; 删除此配置</button>
+    </div>
+  </div>`;
+}
+
+function renderSectionDetail() {
+  const cfg = state.configs.find(c => c.name === sel.config);
+  if (!cfg) return '<div class="empty-state"><h3>配置未找到</h3></div>';
+  const sec = (cfg.sections||[]).find(s => s.name === sel.section);
+  if (!sec) return '<div class="empty-state"><h3>节未找到</h3></div>';
+  const items = sec.items || [];
+  let itemsHtml = items.length ? `<table class="items-table"><tr><th>键</th><th>值</th><th>描述</th><th></th></tr>` : '<div class="text-muted" style="padding:8px 0">暂无配置项</div>';
+  for (const item of items) {
+    itemsHtml += items.length ? `<tr>
+      <td><b>${esc(item.key)}</b></td>
+      <td>${esc(item.value)}</td>
+      <td class="text-muted">${esc(item.description||'')}</td>
+      <td><div class="actions">
+        <button onclick="selectItem('${esc(cfg.name)}','${esc(item.key)}','${esc(sec.name)}')">&#9998;</button>
+        <button class="del" onclick="deleteItem('${esc(cfg.name)}','${esc(item.key)}','${esc(sec.name)}')">&#10005;</button>
+      </div></td>
+    </tr>` : '';
+  }
+  itemsHtml += items.length ? '</table>' : '';
+  return `<div class="detail-card">
+    <h2>&#128193; ${esc(sec.name)} <span class="text-muted" style="font-weight:400;font-size:13px">位于 ${esc(cfg.name)}</span></h2>
+    <p class="subtitle">节设置</p>
+    <div class="form-group">
+      <label>节名称</label>
+      <input type="text" value="${esc(sec.name)}" onchange="updateSection('${esc(cfg.name)}','${esc(sec.name)}',{name:this.value})" />
+    </div>
+    <div class="form-group">
+      <label>描述</label>
+      <textarea onchange="updateSection('${esc(cfg.name)}','${esc(sec.name)}',{description:this.value})">${esc(sec.description||'')}</textarea>
+    </div>
+    <div style="margin-top:20px">
+      <h3 style="font-size:14px;margin-bottom:4px">配置项</h3>
+      ${itemsHtml}
+      <button class="add-btn add-btn-sm" onclick="showNewItemModal('${esc(cfg.name)}','${esc(sec.name)}')">&#10010; 添加配置项</button>
+    </div>
+    <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0">
+      <button class="btn-danger" style="height:32px;padding:0 14px;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:13px" onclick="deleteSection('${esc(cfg.name)}','${esc(sec.name)}')">&#128465; 删除此节</button>
+    </div>
+  </div>`;
+}
+
+function renderItemDetail() {
+  const cfg = state.configs.find(c => c.name === sel.config);
+  if (!cfg) return '<div class="empty-state"><h3>配置未找到</h3></div>';
+  let item;
+  if (sel.section) {
+    const sec = (cfg.sections||[]).find(s => s.name === sel.section);
+    item = sec ? (sec.items||[]).find(i => i.key === sel.key) : null;
+  } else {
+    item = (cfg.items||[]).find(i => i.key === sel.key);
+  }
+  if (!item) return '<div class="empty-state"><h3>配置项未找到</h3></div>';
+  const location = sel.section ? `${esc(cfg.name)} / ${esc(sel.section)}` : esc(cfg.name);
+  return `<div class="detail-card">
+    <h2>&#128273; ${esc(item.key)}</h2>
+    <p class="subtitle">位于 ${location}</p>
+    <div class="form-group">
+      <label>键</label>
+      <input type="text" value="${esc(item.key)}" id="itemKey" />
+    </div>
+    <div class="form-group">
+      <label>值</label>
+      <input type="text" value="${esc(item.value)}" id="itemValue" />
+    </div>
+    <div class="form-group">
+      <label>描述</label>
+      <textarea id="itemDesc">${esc(item.description||'')}</textarea>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:8px">
+      <button class="btn-primary" style="height:34px;padding:0 20px;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:13px" onclick="saveItemEdit()">&#128190; 保存</button>
+      <button class="btn-danger" style="height:34px;padding:0 20px;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:13px" onclick="deleteItem('${esc(cfg.name)}','${esc(sel.key)}','${esc(sel.section||'')}')">&#128465; 删除</button>
+    </div>
+  </div>`;
+}
+
+function renderSharedList() {
+  const items = state.shared_items || [];
+  let html = `<div class="detail-card">
+    <h2>&#128279; 共享配置项</h2>
+    <p class="subtitle">共享配置项会输出到多个指定的配置文件中</p>`;
+  if (!items.length) {
+    html += '<div class="text-muted" style="padding:12px 0">暂无共享配置项</div>';
+  } else {
+    html += '<div class="shared-grid">';
+    for (const si of items) {
+      const targets = (si.target_configs||[]).join(', ') || '无目标配置';
+      const secInfo = si.section ? ` &#8594; [${esc(si.section)}]` : '';
+      html += `<div class="shared-card" onclick="selectSharedItem('${esc(si.key)}')">
+        <div class="sc-header">
+          <span class="sc-key">${esc(si.key)}</span>
+          <span style="font-size:12px;color:#94a3b8">点击编辑</span>
+        </div>
+        <div class="sc-value">= ${esc(si.value)}${secInfo}</div>
+        <div class="sc-targets">输出到: ${esc(targets)}</div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+  html += `<button class="add-btn" onclick="showNewSharedModal()">&#10010; 添加共享配置项</button></div>`;
+  return html;
+}
+
+function renderSharedItemDetail() {
+  const si = (state.shared_items||[]).find(s => s.key === sel.key);
+  if (!si) return '<div class="empty-state"><h3>共享配置项未找到</h3></div>';
+  const configNames = state.configs.map(c => c.name);
+  let targetsHtml = '<div class="checkbox-group">';
+  for (const cn of configNames) {
+    const checked = (si.target_configs||[]).includes(cn);
+    targetsHtml += `<label class="${checked?'checked':''}" onclick="this.classList.toggle('checked');this.querySelector('input').checked=!this.querySelector('input').checked">
+      <input type="checkbox" value="${esc(cn)}" ${checked?'checked':''} onchange="this.parentElement.classList.toggle('checked')" /> ${esc(cn)}
+    </label>`;
+  }
+  targetsHtml += '</div>';
+  return `<div class="detail-card">
+    <h2>&#128279; ${esc(si.key)}</h2>
+    <p class="subtitle">共享配置项</p>
+    <div class="form-group">
+      <label>键</label>
+      <input type="text" value="${esc(si.key)}" id="sharedKey" />
+    </div>
+    <div class="form-group">
+      <label>值</label>
+      <input type="text" value="${esc(si.value)}" id="sharedValue" />
+    </div>
+    <div class="form-group">
+      <label>描述</label>
+      <textarea id="sharedDesc">${esc(si.description||'')}</textarea>
+    </div>
+    <div class="form-group">
+      <label>所属节 (可选)</label>
+      <input type="text" value="${esc(si.section||'')}" id="sharedSection" placeholder="留空则添加到配置根级别" />
+    </div>
+    <div class="form-group">
+      <label>输出到以下配置</label>
+      ${targetsHtml}
+    </div>
+    <div style="margin-top:20px;display:flex;gap:8px">
+      <button class="btn-primary" style="height:34px;padding:0 20px;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:13px" onclick="saveSharedEdit()">&#128190; 保存</button>
+      <button class="btn-danger" style="height:34px;padding:0 20px;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:13px" onclick="deleteSharedItem('${esc(si.key)}')">&#128465; 删除</button>
+    </div>
+  </div>`;
+}
+
+// =====================================================================
+// CRUD Operations
+// =====================================================================
+async function loadState() {
+  state = await api('GET', '/api/project');
+  render();
+}
+
+async function updateProjectName(name) {
+  const res = await api('POST', '/api/project', { action: 'new', name });
+  if (res.name) {
+    state = res;
+    await loadState();
+    toast('项目已更新', 'success');
+  }
+}
+
+async function updateConfig(name, data) {
+  const res = await api('PUT', `/api/configs/${encodeURIComponent(name)}`, data);
+  if (res.error) { toast(res.error, 'error'); return; }
+  await loadState();
+  sel = { type: 'config', config: res.name || name };
+  toast('配置已更新', 'success');
+}
+
+async function updateSection(configName, sectionName, data) {
+  const res = await api('PUT', `/api/configs/${encodeURIComponent(configName)}/sections/${encodeURIComponent(sectionName)}`, data);
+  if (res.error) { toast(res.error, 'error'); return; }
+  await loadState();
+  sel = { type: 'section', config: configName, section: res.name || sectionName };
+  toast('节已更新', 'success');
+}
+
+async function saveItemEdit() {
+  const key = document.getElementById('itemKey')?.value?.trim();
+  const value = document.getElementById('itemValue')?.value;
+  const desc = document.getElementById('itemDesc')?.value;
+  if (!key) { toast('键不能为空', 'error'); return; }
+  let url = `/api/configs/${encodeURIComponent(sel.config)}/items/${encodeURIComponent(sel.key)}`;
+  if (sel.section) url += `?section=${encodeURIComponent(sel.section)}`;
+  const res = await api('PUT', url, { key, value, description: desc });
+  if (res.error) { toast(res.error, 'error'); return; }
+  const prevKey = sel.key;
+  await loadState();
+  sel = { type: 'item', config: sel.config, key: key, section: sel.section };
+  toast('配置项已保存', 'success');
+}
+
+async function deleteConfig(name) {
+  if (!confirm(`确定删除配置 "${name}" 吗？`)) return;
+  await api('DELETE', `/api/configs/${encodeURIComponent(name)}`);
+  await loadState();
+  selectProject();
+  toast('配置已删除', 'success');
+}
+
+async function deleteSection(configName, sectionName) {
+  if (!confirm(`确定删除节 "${sectionName}" 吗？`)) return;
+  await api('DELETE', `/api/configs/${encodeURIComponent(configName)}/sections/${encodeURIComponent(sectionName)}`);
+  await loadState();
+  sel = { type: 'config', config: configName };
+  toast('节已删除', 'success');
+}
+
+async function deleteItem(configName, key, sectionName) {
+  if (!confirm(`确定删除配置项 "${key}" 吗？`)) return;
+  let url = `/api/configs/${encodeURIComponent(configName)}/items/${encodeURIComponent(key)}`;
+  if (sectionName) url += `?section=${encodeURIComponent(sectionName)}`;
+  await api('DELETE', url);
+  await loadState();
+  if (sectionName) sel = { type: 'section', config: configName, section: sectionName };
+  else sel = { type: 'config', config: configName };
+  toast('配置项已删除', 'success');
+}
+
+async function deleteSharedItem(key) {
+  if (!confirm(`确定删除共享配置项 "${key}" 吗？`)) return;
+  await api('DELETE', `/api/shared/${encodeURIComponent(key)}`);
+  await loadState();
+  selectSharedList();
+  toast('共享配置项已删除', 'success');
+}
+
+async function saveSharedEdit() {
+  const key = document.getElementById('sharedKey')?.value?.trim();
+  const value = document.getElementById('sharedValue')?.value;
+  const desc = document.getElementById('sharedDesc')?.value;
+  const section = document.getElementById('sharedSection')?.value?.trim() || '';
+  const checks = document.querySelectorAll('#modalBody .checkbox-group input:checked, .detail-card .checkbox-group input:checked');
+  const targets = Array.from(checks).map(c => c.value);
+  if (!key) { toast('键不能为空', 'error'); return; }
+  const res = await api('PUT', `/api/shared/${encodeURIComponent(sel.key)}`, { key, value, description: desc, section, target_configs: targets });
+  if (res.error) { toast(res.error, 'error'); return; }
+  await loadState();
+  sel = { type: 'shared-item', key: key };
+  toast('共享配置项已保存', 'success');
+}
+
+// =====================================================================
+// New Entity Modals
+// =====================================================================
+function showNewConfigModal() {
+  showModal('添加配置', `
+    <div class="form-group"><label>配置名称</label><input type="text" id="modalConfigName" placeholder="例如: server" /></div>
+    <div class="form-group"><label>保存路径 (可选)</label><input type="text" id="modalConfigPath" placeholder="例如: D:/config/server.ini" /></div>
+    <div class="form-group"><label>描述 (可选)</label><textarea id="modalConfigDesc" style="min-height:50px"></textarea></div>
+  `, '添加', async () => {
+    const name = document.getElementById('modalConfigName')?.value?.trim();
+    const path = document.getElementById('modalConfigPath')?.value?.trim();
+    const desc = document.getElementById('modalConfigDesc')?.value;
+    if (!name) { toast('配置名称不能为空', 'error'); return; }
+    const res = await api('POST', '/api/configs', { name, save_path: path, description: desc });
+    if (res.error) { toast(res.error, 'error'); closeModal(); return; }
+    await loadState();
+    sel = { type: 'config', config: name };
+    closeModal();
+    toast('配置已添加', 'success');
+  });
+}
+
+function showNewSectionModal(configName) {
+  showModal('添加节', `
+    <div class="form-group"><label>节名称</label><input type="text" id="modalSecName" placeholder="例如: database" /></div>
+    <div class="form-group"><label>描述 (可选)</label><textarea id="modalSecDesc" style="min-height:50px"></textarea></div>
+  `, '添加', async () => {
+    const name = document.getElementById('modalSecName')?.value?.trim();
+    const desc = document.getElementById('modalSecDesc')?.value;
+    if (!name) { toast('节名称不能为空', 'error'); return; }
+    const res = await api('POST', `/api/configs/${encodeURIComponent(configName)}/sections`, { name, description: desc });
+    if (res.error) { toast(res.error, 'error'); closeModal(); return; }
+    await loadState();
+    sel = { type: 'section', config: configName, section: name };
+    closeModal();
+    toast('节已添加', 'success');
+  });
+}
+
+function showNewItemModal(configName, sectionName) {
+  showModal('添加配置项', `
+    <div class="form-group"><label>键</label><input type="text" id="modalItemKey" placeholder="配置项的键" /></div>
+    <div class="form-group"><label>值</label><input type="text" id="modalItemValue" placeholder="配置项的值" /></div>
+    <div class="form-group"><label>描述 (可选)</label><textarea id="modalItemDesc" style="min-height:50px"></textarea></div>
+    ${sectionName ? `<div class="form-group"><label>所属节</label><input type="text" value="${esc(sectionName)}" disabled style="background:#f8fafc" /></div>` : ''}
+  `, '添加', async () => {
+    const key = document.getElementById('modalItemKey')?.value?.trim();
+    const value = document.getElementById('modalItemValue')?.value;
+    const desc = document.getElementById('modalItemDesc')?.value;
+    if (!key) { toast('键不能为空', 'error'); return; }
+    const res = await api('POST', `/api/configs/${encodeURIComponent(configName)}/items`, { key, value, description: desc, section: sectionName || '' });
+    if (res.error) { toast(res.error, 'error'); closeModal(); return; }
+    await loadState();
+    if (sectionName) sel = { type: 'section', config: configName, section: sectionName };
+    else sel = { type: 'config', config: configName };
+    closeModal();
+    toast('配置项已添加', 'success');
+  });
+}
+
+function showNewSharedModal() {
+  const configNames = state.configs.map(c => c.name);
+  let targetsHtml = configNames.length ? '<div class="checkbox-group">' : '<div class="text-muted">暂无配置，请先添加配置</div>';
+  for (const cn of configNames) {
+    targetsHtml += `<label onclick="this.classList.toggle('checked');this.querySelector('input').checked=!this.querySelector('input').checked">
+      <input type="checkbox" value="${esc(cn)}" onchange="this.parentElement.classList.toggle('checked')" /> ${esc(cn)}
+    </label>`;
+  }
+  targetsHtml += '</div>';
+  showModal('添加共享配置项', `
+    <div class="form-group"><label>键</label><input type="text" id="modalSharedKey" placeholder="共享配置项的键" /></div>
+    <div class="form-group"><label>值</label><input type="text" id="modalSharedValue" placeholder="共享配置项的值" /></div>
+    <div class="form-group"><label>描述 (可选)</label><textarea id="modalSharedDesc" style="min-height:50px"></textarea></div>
+    <div class="form-group"><label>所属节 (可选)</label><input type="text" id="modalSharedSection" placeholder="留空则添加到配置根级别" /></div>
+    <div class="form-group"><label>输出到以下配置</label>${targetsHtml}</div>
+  `, '添加', async () => {
+    const key = document.getElementById('modalSharedKey')?.value?.trim();
+    const value = document.getElementById('modalSharedValue')?.value;
+    const desc = document.getElementById('modalSharedDesc')?.value;
+    const section = document.getElementById('modalSharedSection')?.value?.trim() || '';
+    const checks = document.querySelectorAll('#modalBody .checkbox-group input:checked');
+    const targets = Array.from(checks).map(c => c.value);
+    if (!key) { toast('键不能为空', 'error'); return; }
+    const res = await api('POST', '/api/shared', { key, value, description: desc, section, target_configs: targets });
+    if (res.error) { toast(res.error, 'error'); closeModal(); return; }
+    await loadState();
+    sel = { type: 'shared-item', key: key };
+    closeModal();
+    toast('共享配置项已添加', 'success');
+  });
+}
+
+// =====================================================================
+// Project Actions
+// =====================================================================
+function newProject() {
+  showModal('新建项目', `
+    <div class="form-group"><label>项目名称</label><input type="text" id="modalProjectName" placeholder="项目名称" value="新项目" /></div>
+  `, '创建', async () => {
+    const name = document.getElementById('modalProjectName')?.value?.trim() || '新项目';
+    await api('POST', '/api/project', { action: 'new', name });
+    await loadState();
+    selectProject();
+    closeModal();
+    toast('项目已创建', 'success');
+  });
+}
+
+function openProject() {
+  showModal('打开项目', `
+    <div class="form-group"><label>项目文件路径</label><input type="text" id="modalOpenPath" placeholder="例如: D:/project.json" /></div>
+    <div class="text-muted">输入项目 json 文件的完整路径</div>
+  `, '打开', async () => {
+    const path = document.getElementById('modalOpenPath')?.value?.trim();
+    if (!path) { toast('请输入文件路径', 'error'); return; }
+    const res = await api('POST', '/api/project', { action: 'open', path });
+    if (res.error) { toast(res.error, 'error'); closeModal(); return; }
+    await loadState();
+    selectProject();
+    closeModal();
+    toast('项目已打开', 'success');
+  });
+}
+
+async function saveProject() {
+  if (state.name === '未命名项目' && !document.querySelector('.modal-overlay.open')) {
+    showModal('保存项目', `
+      <div class="form-group"><label>保存路径</label><input type="text" id="modalSavePath" placeholder="例如: D:/myproject.json" /></div>
+      <div class="text-muted">项目将以 JSON 格式保存</div>
+    `, '保存', async () => {
+      const path = document.getElementById('modalSavePath')?.value?.trim();
+      if (!path) { toast('请输入保存路径', 'error'); return; }
+      const res = await api('POST', '/api/project', { action: 'save', path });
+      if (res.error) { toast(res.error, 'error'); closeModal(); return; }
+      closeModal();
+      document.getElementById('projectTitle').textContent = '- ' + path.split('\\').pop().split('/').pop();
+      toast('项目已保存', 'success');
+    });
+    return;
+  }
+  const res = await api('POST', '/api/project', { action: 'save' });
+  if (res.error) {
+    toast(res.error, 'error');
+    return;
+  }
+  toast('项目已保存', 'success');
+}
+
+async function exportProject() {
+  const res = await api('POST', '/api/project', { action: 'export' });
+  if (res.success) {
+    toast('所有配置已导出', 'success');
+  } else {
+    const errors = (res.errors || []).join('; ');
+    toast('导出完成，部分配置有误: ' + errors, 'error');
+  }
+}
+
+// =====================================================================
+// Utility
+// =====================================================================
+function esc(s) {
+  if (typeof s !== 'string') return s || '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function trunc(s, len) {
+  if (!s) return '';
+  return s.length > (len || 30) ? s.substring(0, (len || 30)) + '...' : s;
+}
+
+// =====================================================================
+// Init
+// =====================================================================
+async function init() {
+  state = await api('GET', '/api/project');
+  render();
+}
+
+function render() {
+  renderTree();
+  renderDetail();
+  document.getElementById('projectTitle').textContent = '- ' + state.name;
+}
+
+init();
+</script>
+</body>
+</html>
