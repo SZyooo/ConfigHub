@@ -387,6 +387,9 @@ function renderConfigDetail() {
       ${secHtml || '<div class="text-muted" style="padding:8px 0">暂无节</div>'}
       <button class="add-btn add-btn-sm" onclick="showNewSectionModal('${esc(cfg.name)}')">&#10010; 添加节</button>
     </div>
+    <div style="margin-top:24px">
+      <h3 style="font-size:14px;margin-bottom:4px">&#128279; 关联的共享配置项</h3>${renderSharedForConfig(cfg.name)}
+    </div>
     <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0">
       <button class="btn-danger" style="height:32px;padding:0 14px;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:13px" onclick="deleteConfig('${esc(cfg.name)}')">&#128465; 删除此配置</button>
     </div>
@@ -535,6 +538,44 @@ function renderSharedItemDetail() {
       <button class="btn-danger" style="height:34px;padding:0 20px;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:13px" onclick="deleteSharedItem('${esc(si.key)}')">&#128465; 删除</button>
     </div>
   </div>`;
+}
+
+function renderSharedForConfig(configName) {
+  const shared = (state.shared_items||[]).filter(si => (si.target_configs||[]).includes(configName));
+  if (!shared.length) return '<div class="text-muted" style="padding:8px 0">无关联的共享配置项</div>';
+
+  const noSection = shared.filter(si => !si.section);
+  const withSection = shared.filter(si => si.section);
+
+  let html = '';
+  if (noSection.length) {
+    html += `<table class="items-table"><tr><th>键</th><th>值</th><th>描述</th><th>来源</th></tr>`;
+    for (const si of noSection) {
+      html += `<tr style="background:#fffbeb">
+        <td><b>${esc(si.key)}</b></td>
+        <td>${esc(si.value)}</td>
+        <td class="text-muted">${esc(si.description||'')}</td>
+        <td><span style="font-size:11px;color:#d97706;background:#fef3c7;padding:2px 6px;border-radius:4px">&#128279; 共享</span></td>
+      </tr>`;
+    }
+    html += '</table>';
+  }
+  for (const si of withSection) {
+    html += `<div class="section-card" style="background:#fffbeb">
+      <div class="section-header" style="background:#fef3c7">
+        <span>&#128193; <b>${esc(si.section)}</b> <span style="font-size:11px;color:#d97706">&#128279; 共享配置项</span></span>
+      </div>
+      <div class="section-body">
+        <table class="items-table"><tr><th>键</th><th>值</th><th>描述</th></tr>
+        <tr>
+          <td><b>${esc(si.key)}</b></td>
+          <td>${esc(si.value)}</td>
+          <td class="text-muted">${esc(si.description||'')}</td>
+        </tr></table>
+      </div>
+    </div>`;
+  }
+  return html;
 }
 
 // =====================================================================
