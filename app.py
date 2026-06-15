@@ -359,6 +359,7 @@ def delete_shared_item(key):
 def browse_save():
     data = request.get_json(force=True)
     ext = data.get('ext', '.ini')
+    filename = data.get('filename', '')
     try:
         import tkinter as tk
         from tkinter import filedialog
@@ -367,6 +368,7 @@ def browse_save():
         root.attributes('-topmost', True)
         path = filedialog.asksaveasfilename(
             defaultextension=ext,
+            initialfile=filename,
             filetypes=[(f'*{ext}', f'*{ext}'), ('All files', '*.*')]
         )
         root.destroy()
