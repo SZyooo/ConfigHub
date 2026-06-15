@@ -456,6 +456,11 @@ function renderItemDetail() {
   }
   if (!item) return '<div class="empty-state"><h3>配置项未找到</h3></div>';
   const location = sel.section ? `${esc(cfg.name)} / ${esc(sel.section)}` : esc(cfg.name);
+  const defaultSec = cfg.default_section || '=';
+  let secOptions = `<option value="" ${!sel.section?'selected':''}>${esc(defaultSec)} (全局)</option>`;
+  for (const sec of (cfg.sections||[])) {
+    secOptions += `<option value="${esc(sec.name)}" ${sel.section===sec.name?'selected':''}>${esc(sec.name)}</option>`;
+  }
   return `<div class="detail-card">
     <h2>&#128273; ${esc(item.key)}</h2>
     <p class="subtitle">位于 ${location}</p>
@@ -470,6 +475,10 @@ function renderItemDetail() {
     <div class="form-group">
       <label>描述</label>
       <textarea id="itemDesc">${esc(item.description||'')}</textarea>
+    </div>
+    <div class="form-group">
+      <label>所属节</label>
+      <select id="itemSection">${secOptions}</select>
     </div>
     <div style="margin-top:20px;display:flex;gap:8px">
       <button class="btn-primary" style="height:34px;padding:0 20px;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:13px" onclick="saveItemEdit()">&#128190; 保存</button>
@@ -557,7 +566,8 @@ function renameDefaultSection(configName) {
   }
 }
 
-async function saveSharedOverrides(configName) {
+async function saveSharedOverrides(btn) {
+  const configName = btn.dataset.config;
   const cfg = state.configs.find(c => c.name === configName);
   if (!cfg) { toast('配置未找到', 'error'); return; }
   const overrides = {};
@@ -604,7 +614,7 @@ function renderSharedForConfig(configName) {
     </tr>`;
   }
   html += '</table>';
-  html += `<button class="add-btn add-btn-sm" onclick="saveSharedOverrides('${esc(configName)}')">&#128190; 保存节映射</button>`;
+  html += `<button class="add-btn add-btn-sm" data-config="${esc(configName)}" onclick="saveSharedOverrides(this)">&#128190; 保存节映射</button>`;
   return html;
 }
 // =====================================================================
@@ -646,14 +656,28 @@ async function saveItemEdit() {
   const key = document.getElementById('itemKey')?.value?.trim();
   const value = document.getElementById('itemValue')?.value;
   const desc = document.getElementById('itemDesc')?.value;
+  const newSection = document.getElementById('itemSection')?.value || '';
   if (!key) { toast('键不能为空', 'error'); return; }
-  let url = `/api/configs/${encodeURIComponent(sel.config)}/items/${encodeURIComponent(sel.key)}`;
-  if (sel.section) url += `?section=${encodeURIComponent(sel.section)}`;
-  const res = await api('PUT', url, { key, value, description: desc });
-  if (res.error) { toast(res.error, 'error'); return; }
-  const prevKey = sel.key;
+  const oldSection = sel.section || '';
+  const configName = sel.config;
+
+  if (newSection !== oldSection) {
+    let delUrl = `/api/configs/${encodeURIComponent(configName)}/items/${encodeURIComponent(sel.key)}`;
+    if (oldSection) delUrl += `?section=${encodeURIComponent(oldSection)}`;
+    const delRes = await api('DELETE', delUrl);
+    if (delRes.error) { toast(delRes.error, 'error'); return; }
+    const addRes = await api('POST', `/api/configs/${encodeURIComponent(configName)}/items`, { key, value, description: desc, section: newSection });
+    if (addRes.error) { toast(addRes.error, 'error'); return; }
+  } else {
+    let url = `/api/configs/${encodeURIComponent(configName)}/items/${encodeURIComponent(sel.key)}`;
+    if (oldSection) url += `?section=${encodeURIComponent(oldSection)}`;
+    const res = await api('PUT', url, { key, value, description: desc });
+    if (res.error) { toast(res.error, 'error'); return; }
+  }
   await loadState();
-  sel = { type: 'item', config: sel.config, key: key, section: sel.section };
+  if (newSection) sel = { type: 'section', config: configName, section: newSection };
+  else sel = { type: 'config', config: configName };
+  render();
   toast('配置项已保存', 'success');
 }
 
