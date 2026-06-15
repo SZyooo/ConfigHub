@@ -578,17 +578,27 @@ function renderSharedForConfig(configName) {
   const shared = (state.shared_items||[]).filter(si => (si.target_configs||[]).includes(configName));
   if (!shared.length) return '<div class="text-muted" style="padding:8px 0">无关联的共享配置项</div>';
   const overrides = (cfg && cfg.shared_section_overrides) || {};
+  const sectionNames = [cfg.default_section || '='];
+  if (cfg) {
+    for (const sec of (cfg.sections || [])) {
+      if (!sectionNames.includes(sec.name)) sectionNames.push(sec.name);
+    }
+  }
 
-  let html = `<table class="items-table"><tr><th>键</th><th>值</th><th>默认节</th><th>导出到节</th><th></th></tr>`;
+  let html = `<datalist id="secList_${esc(configName)}">`;
+  for (const sn of sectionNames) {
+    html += `<option value="${esc(sn)}">`;
+  }
+  html += '</datalist>';
+  html += `<table class="items-table"><tr><th>键</th><th>值</th><th>默认节</th><th>导出到节</th><th></th></tr>`;
   for (const si of shared) {
     const defaultSection = si.section || '(根级)';
     const overrideVal = overrides[si.key] !== undefined ? overrides[si.key] : '';
-    const displayVal = overrideVal || defaultSection;
     html += `<tr style="background:#fffbeb">
       <td><b>${esc(si.key)}</b></td>
       <td>${esc(si.value)}</td>
       <td class="text-muted">${esc(defaultSection)}</td>
-      <td><input id="ovr_${esc(si.key)}" value="${esc(overrideVal)}" placeholder="${esc(defaultSection)}" style="width:120px;padding:4px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px" /></td>
+      <td><input id="ovr_${esc(si.key)}" value="${esc(overrideVal)}" placeholder="${esc(defaultSection)}" list="secList_${esc(configName)}" style="width:120px;padding:4px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px" /></td>
       <td><span style="font-size:11px;color:#d97706;background:#fef3c7;padding:2px 6px;border-radius:4px">&#128279; 共享</span></td>
     </tr>`;
   }
