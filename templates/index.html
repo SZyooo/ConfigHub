@@ -638,6 +638,7 @@ async function updateSection(configName, sectionName, data) {
   if (res.error) { toast(res.error, 'error'); return; }
   await loadState();
   sel = { type: 'section', config: configName, section: res.name || sectionName };
+  render();
   toast('节已更新', 'success');
 }
 
