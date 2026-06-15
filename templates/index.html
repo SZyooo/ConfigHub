@@ -559,18 +559,19 @@ function renameDefaultSection(configName) {
 
 async function saveSharedOverrides(configName) {
   const cfg = state.configs.find(c => c.name === configName);
-  if (!cfg) return;
+  if (!cfg) { toast('配置未找到', 'error'); return; }
   const overrides = {};
   const shared = (state.shared_items||[]).filter(si => (si.target_configs||[]).includes(configName));
   for (const si of shared) {
     const input = document.getElementById('ovr_' + si.key);
-    if (input) {
-      const val = input.value.trim();
-      if (val) overrides[si.key] = val;
-      else overrides[si.key] = '';
-    }
+    overrides[si.key] = input ? input.value.trim() : '';
   }
-  await updateConfig(configName, { shared_section_overrides: overrides });
+  const res = await api('PUT', `/api/configs/${encodeURIComponent(configName)}`, { shared_section_overrides: overrides });
+  if (res.error) { toast(res.error, 'error'); return; }
+  await loadState();
+  sel = { type: 'config', config: configName };
+  render();
+  toast('共享配置节映射已保存', 'success');
 }
 
 function renderSharedForConfig(configName) {
@@ -628,6 +629,7 @@ async function updateConfig(name, data) {
   if (res.error) { toast(res.error, 'error'); return; }
   await loadState();
   sel = { type: 'config', config: res.name || name };
+  render();
   toast('配置已更新', 'success');
 }
 
