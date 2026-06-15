@@ -502,7 +502,7 @@ function renderSharedItemDetail() {
   let targetsHtml = '<div class="checkbox-group">';
   for (const cn of configNames) {
     const checked = (si.target_configs||[]).includes(cn);
-    targetsHtml += `<label class="${checked?'checked':''}" onclick="this.classList.toggle('checked');this.querySelector('input').checked=!this.querySelector('input').checked">
+    targetsHtml += `<label class="${checked?'checked':''}">
       <input type="checkbox" value="${esc(cn)}" ${checked?'checked':''} onchange="this.parentElement.classList.toggle('checked')" /> ${esc(cn)}
     </label>`;
   }
@@ -625,7 +625,7 @@ async function saveSharedEdit() {
   const value = document.getElementById('sharedValue')?.value;
   const desc = document.getElementById('sharedDesc')?.value;
   const section = document.getElementById('sharedSection')?.value?.trim() || '';
-  const checks = document.querySelectorAll('#modalBody .checkbox-group input:checked, .detail-card .checkbox-group input:checked');
+  const checks = document.querySelectorAll('.detail-card .checkbox-group input:checked');
   const targets = Array.from(checks).map(c => c.value);
   if (!key) { toast('键不能为空', 'error'); return; }
   const res = await api('PUT', `/api/shared/${encodeURIComponent(sel.key)}`, { key, value, description: desc, section, target_configs: targets });
@@ -699,7 +699,7 @@ function showNewSharedModal() {
   const configNames = state.configs.map(c => c.name);
   let targetsHtml = configNames.length ? '<div class="checkbox-group">' : '<div class="text-muted">暂无配置，请先添加配置</div>';
   for (const cn of configNames) {
-    targetsHtml += `<label onclick="this.classList.toggle('checked');this.querySelector('input').checked=!this.querySelector('input').checked">
+    targetsHtml += `<label>
       <input type="checkbox" value="${esc(cn)}" onchange="this.parentElement.classList.toggle('checked')" /> ${esc(cn)}
     </label>`;
   }
