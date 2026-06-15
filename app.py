@@ -382,5 +382,25 @@ def browse_save():
         return jsonify({'error': str(e), 'path': ''}), 500
 
 
+@app.route('/api/browse-open', methods=['POST'])
+def browse_open():
+    data = request.get_json(force=True)
+    ext = data.get('ext', '.json')
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes('-topmost', True)
+        path = filedialog.askopenfilename(
+            defaultextension=ext,
+            filetypes=[(f'*{ext}', f'*{ext}'), ('All files', '*.*')]
+        )
+        root.destroy()
+        return jsonify({'path': path or ''})
+    except Exception as e:
+        return jsonify({'error': str(e), 'path': ''}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

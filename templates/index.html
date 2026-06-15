@@ -803,8 +803,8 @@ function newProject() {
 
 function openProject() {
   showModal('打开项目', `
-    <div class="form-group"><label>项目文件路径</label><input type="text" id="modalOpenPath" placeholder="例如: D:/project.json" /></div>
-    <div class="text-muted">输入项目 json 文件的完整路径</div>
+    <div class="form-group"><label>项目文件路径</label><div style="display:flex;gap:6px"><input type="text" id="modalOpenPath" placeholder="例如: D:/project.json" style="flex:1" /><button onclick="browseOpenPath('.json','modalOpenPath')" style="flex-shrink:0;height:34px;padding:0 12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">浏览...</button></div></div>
+    <div class="text-muted">选择或输入项目 json 文件的完整路径</div>
   `, '打开', async () => {
     const path = document.getElementById('modalOpenPath')?.value?.trim();
     if (!path) { toast('请输入文件路径', 'error'); return; }
@@ -862,6 +862,13 @@ async function browseModalPath(ext, inputId, nameSourceId) {
     name = document.getElementById(nameSourceId)?.value?.trim() || '';
   }
   const res = await api('POST', '/api/browse-save', { ext, filename: name });
+  if (res.path) {
+    document.getElementById(inputId).value = res.path;
+  }
+}
+
+async function browseOpenPath(ext, inputId) {
+  const res = await api('POST', '/api/browse-open', { ext });
   if (res.path) {
     document.getElementById(inputId).value = res.path;
   }
