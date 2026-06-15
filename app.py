@@ -79,7 +79,7 @@ def export_config(config):
                     })
 
     lines = []
-    default_sec = cfg_copy.get("default_section", "") or "全局"
+    default_sec = cfg_copy.get("default_section", "") or "="
     if cfg_copy.get("items"):
         lines.append(f"[{default_sec}]")
         for item in cfg_copy.get("items", []):

@@ -314,7 +314,7 @@ function renderConfigDetail() {
   if (!cfg) return '<div class="empty-state"><h3>配置未找到</h3></div>';
   const items = cfg.items || [];
   const sections = cfg.sections || [];
-  const defaultSecName = cfg.default_section || '全局';
+  const defaultSecName = cfg.default_section || '=';
   let itemsHtml = items.length ? `<table class="items-table"><tr><th>键</th><th>值</th><th>描述</th><th></th></tr>` : '<div class="text-muted" style="padding:8px 0">暂无配置项</div>';
   for (const item of items) {
     itemsHtml += items.length ? `<tr>
@@ -330,7 +330,7 @@ function renderConfigDetail() {
   itemsHtml += items.length ? '</table>' : '';
   const defaultSecHtml = `<div class="section-card">
     <div class="section-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.toggle-icon').textContent=this.nextElementSibling.classList.contains('collapsed')?'&#9654;':'&#9660;'">
-      <span><span class="toggle-icon" style="font-size:10px;margin-right:6px;color:#94a3b8">&#9660;</span>&#128193; <b ondblclick="event.stopPropagation();renameDefaultSection('${esc(cfg.name)}')" style="cursor:pointer" title="双击重命名">${esc(defaultSecName)}</b> <span class="text-muted" style="font-size:11px">(默认节, 双击重命名)</span></span>
+      <span><span class="toggle-icon" style="font-size:10px;margin-right:6px;color:#94a3b8">&#9660;</span>&#128193; <b ondblclick="event.stopPropagation();renameDefaultSection('${esc(cfg.name)}')" style="cursor:pointer" title="双击重命名">${esc(defaultSecName)}</b> <span class="text-muted" style="font-size:11px">(双击重命名)</span></span>
       <span class="sec-actions" onclick="event.stopPropagation()">
         <button onclick="showNewItemModal('${esc(cfg.name)}',null)">&#10010; 添加</button>
       </span>
@@ -550,7 +550,7 @@ function renderSharedItemDetail() {
 function renameDefaultSection(configName) {
   const cfg = state.configs.find(c => c.name === configName);
   if (!cfg) return;
-  const current = cfg.default_section || '全局';
+  const current = cfg.default_section || '=';
   const name = prompt('重命名默认节名称:', current);
   if (name && name.trim() && name.trim() !== current) {
     updateConfig(configName, { default_section: name.trim() });
