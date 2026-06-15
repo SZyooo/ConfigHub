@@ -368,7 +368,10 @@ function renderConfigDetail() {
     </div>
     <div class="form-group">
       <label>保存路径</label>
-      <input type="text" value="${esc(cfg.save_path||'')}" placeholder="例如: D:/server.ini" onchange="updateConfig('${esc(cfg.name)}',{save_path:this.value})" />
+      <div style="display:flex;gap:6px">
+        <input type="text" value="${esc(cfg.save_path||'')}" placeholder="例如: D:/server.ini" onchange="updateConfig('${esc(cfg.name)}',{save_path:this.value})" style="flex:1" />
+        <button onclick="browsePath('${esc(cfg.name)}','.ini')" style="flex-shrink:0;height:34px;padding:0 12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;white-space:nowrap">浏览...</button>
+      </div>
     </div>
     <div class="form-group">
       <label>描述</label>
@@ -638,7 +641,7 @@ async function saveSharedEdit() {
 function showNewConfigModal() {
   showModal('添加配置', `
     <div class="form-group"><label>配置名称</label><input type="text" id="modalConfigName" placeholder="例如: server" /></div>
-    <div class="form-group"><label>保存路径 (可选)</label><input type="text" id="modalConfigPath" placeholder="例如: D:/config/server.ini" /></div>
+    <div class="form-group"><label>保存路径 (可选)</label><div style="display:flex;gap:6px"><input type="text" id="modalConfigPath" placeholder="例如: D:/config/server.ini" style="flex:1" /><button onclick="browseModalPath('.ini','modalConfigPath')" style="flex-shrink:0;height:34px;padding:0 12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">浏览...</button></div></div>
     <div class="form-group"><label>描述 (可选)</label><textarea id="modalConfigDesc" style="min-height:50px"></textarea></div>
   `, '添加', async () => {
     const name = document.getElementById('modalConfigName')?.value?.trim();
@@ -759,7 +762,7 @@ function openProject() {
 async function saveProject() {
   if (state.name === '未命名项目' && !document.querySelector('.modal-overlay.open')) {
     showModal('保存项目', `
-      <div class="form-group"><label>保存路径</label><input type="text" id="modalSavePath" placeholder="例如: D:/myproject.json" /></div>
+      <div class="form-group"><label>保存路径</label><div style="display:flex;gap:6px"><input type="text" id="modalSavePath" placeholder="例如: D:/myproject.json" style="flex:1" /><button onclick="browseModalPath('.json','modalSavePath')" style="flex-shrink:0;height:34px;padding:0 12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">浏览...</button></div></div>
       <div class="text-muted">项目将以 JSON 格式保存</div>
     `, '保存', async () => {
       const path = document.getElementById('modalSavePath')?.value?.trim();
@@ -778,6 +781,26 @@ async function saveProject() {
     return;
   }
   toast('项目已保存', 'success');
+}
+
+// =====================================================================
+// Browse File Dialog
+// =====================================================================
+async function browsePath(configName, ext) {
+  const res = await api('POST', '/api/browse-save', { ext });
+  if (res.path) {
+    updateConfig(configName, { save_path: res.path });
+    // Re-render to show the new path
+    await loadState();
+    sel = { type: 'config', config: configName };
+  }
+}
+
+async function browseModalPath(ext, inputId) {
+  const res = await api('POST', '/api/browse-save', { ext });
+  if (res.path) {
+    document.getElementById(inputId).value = res.path;
+  }
 }
 
 async function exportProject() {

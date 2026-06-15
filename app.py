@@ -355,5 +355,25 @@ def delete_shared_item(key):
     return jsonify({'success': True})
 
 
+@app.route('/api/browse-save', methods=['POST'])
+def browse_save():
+    data = request.get_json(force=True)
+    ext = data.get('ext', '.ini')
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes('-topmost', True)
+        path = filedialog.asksaveasfilename(
+            defaultextension=ext,
+            filetypes=[(f'*{ext}', f'*{ext}'), ('All files', '*.*')]
+        )
+        root.destroy()
+        return jsonify({'path': path or ''})
+    except Exception as e:
+        return jsonify({'error': str(e), 'path': ''}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
