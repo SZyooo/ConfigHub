@@ -52,9 +52,10 @@ def export_config(config):
 
     cfg_copy = deep_copy(config)
     config_name = cfg_copy["name"]
+    overrides = cfg_copy.get("shared_section_overrides", {}) or {}
     for si in project.get("shared_items", []):
         if config_name in si.get("target_configs", []):
-            section_name = si.get("section", "")
+            section_name = overrides.get(si["key"], si.get("section", ""))
             if section_name:
                 sec = None
                 for s in cfg_copy.get("sections", []):
@@ -177,7 +178,8 @@ def add_config():
         "description": data.get('description', ''),
         "save_path": data.get('save_path', ''),
         "sections": [],
-        "items": []
+        "items": [],
+        "shared_section_overrides": {}
     }
     project["configs"].append(cfg)
     return jsonify(cfg), 201
@@ -198,6 +200,8 @@ def update_config(name):
         cfg['description'] = data['description']
     if 'save_path' in data:
         cfg['save_path'] = data['save_path']
+    if 'shared_section_overrides' in data:
+        cfg['shared_section_overrides'] = data['shared_section_overrides']
     return jsonify(cfg)
 
 

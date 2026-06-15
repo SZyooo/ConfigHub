@@ -557,41 +557,45 @@ function renameDefaultSection(configName) {
   }
 }
 
+function saveSharedOverrides(configName) {
+  const cfg = state.configs.find(c => c.name === configName);
+  if (!cfg) return;
+  const overrides = {};
+  const shared = (state.shared_items||[]).filter(si => (si.target_configs||[]).includes(configName));
+  for (const si of shared) {
+    const input = document.getElementById('ovr_' + si.key);
+    if (input) {
+      const val = input.value.trim();
+      if (val) overrides[si.key] = val;
+      else overrides[si.key] = '';
+    }
+  }
+  updateConfig(configName, { shared_section_overrides: overrides });
+}
+
 function renderSharedForConfig(configName) {
+  const cfg = state.configs.find(c => c.name === configName);
   const shared = (state.shared_items||[]).filter(si => (si.target_configs||[]).includes(configName));
   if (!shared.length) return '<div class="text-muted" style="padding:8px 0">无关联的共享配置项</div>';
+  const overrides = (cfg && cfg.shared_section_overrides) || {};
 
-  const noSection = shared.filter(si => !si.section);
-  const withSection = shared.filter(si => si.section);
-
-  let html = '';
-  if (noSection.length) {
-    html += `<table class="items-table"><tr><th>键</th><th>值</th><th>描述</th><th>来源</th></tr>`;
-    for (const si of noSection) {
-      html += `<tr style="background:#fffbeb">
-        <td><b>${esc(si.key)}</b></td>
-        <td>${esc(si.value)}</td>
-        <td class="text-muted">${esc(si.description||'')}</td>
-        <td><span style="font-size:11px;color:#d97706;background:#fef3c7;padding:2px 6px;border-radius:4px">&#128279; 共享</span></td>
-      </tr>`;
-    }
-    html += '</table>';
+  let html = `<table class="items-table"><tr><th>键</th><th>值</th><th>默认节</th><th>导出到节</th><th></th></tr>`;
+  for (const si of shared) {
+    const defaultSection = si.section || '(根级)';
+    const overrideVal = overrides[si.key] !== undefined ? overrides[si.key] : '';
+    const displayVal = overrideVal || defaultSection;
+    html += `<tr style="background:#fffbeb">
+      <td><b>${esc(si.key)}</b></td>
+      <td>${esc(si.value)}</td>
+      <td class="text-muted">${esc(defaultSection)}</td>
+      <td><input id="ovr_${esc(si.key)}" value="${esc(overrideVal)}" placeholder="${esc(defaultSection)}" style="width:120px;padding:4px 8px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px" /></td>
+      <td><span style="font-size:11px;color:#d97706;background:#fef3c7;padding:2px 6px;border-radius:4px">&#128279; 共享</span></td>
+    </tr>`;
   }
-  for (const si of withSection) {
-    html += `<div class="section-card" style="background:#fffbeb">
-      <div class="section-header" style="background:#fef3c7;cursor:pointer" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.toggle-icon').textContent=this.nextElementSibling.classList.contains('collapsed')?'&#9654;':'&#9660;'">
-        <span><span class="toggle-icon" style="font-size:10px;margin-right:6px;color:#d97706">&#9660;</span>&#128193; <b>${esc(si.section)}</b> <span style="font-size:11px;color:#d97706">&#128279; 共享配置项</span></span>
-      </div>
-      <div class="section-body">
-        <table class="items-table"><tr><th>键</th><th>值</th><th>描述</th></tr>
-        <tr>
-          <td><b>${esc(si.key)}</b></td>
-          <td>${esc(si.value)}</td>
-          <td class="text-muted">${esc(si.description||'')}</td>
-        </tr></table>
-      </div>
-    </div>`;
-  }
+  html += '</table>';
+  html += `<button class="add-btn add-btn-sm" onclick="saveSharedOverrides('${esc(configName)}')">&#128190; 保存节映射</button>`;
+  return html;
+}
   return html;
 }
 
