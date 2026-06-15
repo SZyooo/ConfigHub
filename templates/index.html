@@ -64,6 +64,7 @@ main{flex:1;display:flex;overflow:hidden}
 .section-header .sec-actions button{padding:2px 8px;border:1px solid #e2e8f0;border-radius:4px;background:#fff;cursor:pointer;font-size:11px}
 .section-header .sec-actions .del-sec:hover{background:#fef2f2;border-color:#fecaca;color:#dc2626}
 .section-body{padding:12px 16px;border-top:1px solid #e2e8f0}
+.section-body.collapsed{display:none}
 .shared-grid{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .shared-card{border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;cursor:pointer;transition:all .1s}
 .shared-card:hover{border-color:#3b82f6;box-shadow:0 0 0 1px #3b82f6}
@@ -346,9 +347,9 @@ function renderConfigDetail() {
     }
     sItemsHtml += sItems.length ? '</table>' : '';
     secHtml += `<div class="section-card">
-      <div class="section-header">
-        <span>&#128193; <b>${esc(sec.name)}</b> ${sec.description ? '- ' + esc(sec.description) : ''}</span>
-        <span class="sec-actions">
+      <div class="section-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.toggle-icon').textContent=this.nextElementSibling.classList.contains('collapsed')?'&#9654;':'&#9660;'">
+        <span><span class="toggle-icon" style="font-size:10px;margin-right:6px;color:#94a3b8">&#9660;</span>&#128193; <b>${esc(sec.name)}</b> ${sec.description ? '- ' + esc(sec.description) : ''}</span>
+        <span class="sec-actions" onclick="event.stopPropagation()">
           <button onclick="selectSection('${esc(cfg.name)}','${esc(sec.name)}')">&#9998; 编辑</button>
           <button class="del-sec" onclick="deleteSection('${esc(cfg.name)}','${esc(sec.name)}')">&#128465; 删除</button>
         </span>
@@ -562,8 +563,8 @@ function renderSharedForConfig(configName) {
   }
   for (const si of withSection) {
     html += `<div class="section-card" style="background:#fffbeb">
-      <div class="section-header" style="background:#fef3c7">
-        <span>&#128193; <b>${esc(si.section)}</b> <span style="font-size:11px;color:#d97706">&#128279; 共享配置项</span></span>
+      <div class="section-header" style="background:#fef3c7;cursor:pointer" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.toggle-icon').textContent=this.nextElementSibling.classList.contains('collapsed')?'&#9654;':'&#9660;'">
+        <span><span class="toggle-icon" style="font-size:10px;margin-right:6px;color:#d97706">&#9660;</span>&#128193; <b>${esc(si.section)}</b> <span style="font-size:11px;color:#d97706">&#128279; 共享配置项</span></span>
       </div>
       <div class="section-body">
         <table class="items-table"><tr><th>键</th><th>值</th><th>描述</th></tr>
