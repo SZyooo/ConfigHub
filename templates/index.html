@@ -314,22 +314,32 @@ function renderConfigDetail() {
   if (!cfg) return '<div class="empty-state"><h3>配置未找到</h3></div>';
   const items = cfg.items || [];
   const sections = cfg.sections || [];
-  let itemsHtml = items.length ? '' : '<div class="text-muted" style="padding:8px 0">暂无配置项</div>';
-  if (items.length) {
-    itemsHtml = `<table class="items-table"><tr><th>键</th><th>值</th><th>描述</th><th></th></tr>`;
-    for (const item of items) {
-      itemsHtml += `<tr>
-        <td><b>${esc(item.key)}</b></td>
-        <td>${esc(item.value)}</td>
-        <td class="text-muted">${esc(item.description||'')}</td>
-        <td><div class="actions">
-          <button onclick="selectItem('${esc(cfg.name)}','${esc(item.key)}',null)">&#9998;</button>
-          <button class="del" onclick="deleteItem('${esc(cfg.name)}','${esc(item.key)}',null)">&#10005;</button>
-        </div></td>
-      </tr>`;
-    }
-    itemsHtml += '</table>';
+  const defaultSecName = cfg.default_section || '全局';
+  let itemsHtml = items.length ? `<table class="items-table"><tr><th>键</th><th>值</th><th>描述</th><th></th></tr>` : '<div class="text-muted" style="padding:8px 0">暂无配置项</div>';
+  for (const item of items) {
+    itemsHtml += items.length ? `<tr>
+      <td><b>${esc(item.key)}</b></td>
+      <td>${esc(item.value)}</td>
+      <td class="text-muted">${esc(item.description||'')}</td>
+      <td><div class="actions">
+        <button onclick="selectItem('${esc(cfg.name)}','${esc(item.key)}',null)">&#9998;</button>
+        <button class="del" onclick="deleteItem('${esc(cfg.name)}','${esc(item.key)}',null)">&#10005;</button>
+      </div></td>
+    </tr>` : '';
   }
+  itemsHtml += items.length ? '</table>' : '';
+  const defaultSecHtml = `<div class="section-card">
+    <div class="section-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.toggle-icon').textContent=this.nextElementSibling.classList.contains('collapsed')?'&#9654;':'&#9660;'">
+      <span><span class="toggle-icon" style="font-size:10px;margin-right:6px;color:#94a3b8">&#9660;</span>&#128193; <b ondblclick="event.stopPropagation();renameDefaultSection('${esc(cfg.name)}')" style="cursor:pointer" title="双击重命名">${esc(defaultSecName)}</b> <span class="text-muted" style="font-size:11px">(默认节, 双击重命名)</span></span>
+      <span class="sec-actions" onclick="event.stopPropagation()">
+        <button onclick="showNewItemModal('${esc(cfg.name)}',null)">&#10010; 添加</button>
+      </span>
+    </div>
+    <div class="section-body">
+      ${itemsHtml}
+      <button class="add-btn add-btn-sm" onclick="showNewItemModal('${esc(cfg.name)}',null)">&#10010; 添加配置项</button>
+    </div>
+  </div>`;
   let secHtml = '';
   for (const sec of sections) {
     const sItems = sec.items || [];
@@ -379,13 +389,9 @@ function renderConfigDetail() {
       <textarea onchange="updateConfig('${esc(cfg.name)}',{description:this.value})">${esc(cfg.description||'')}</textarea>
     </div>
     <div style="margin-top:20px">
-      <h3 style="font-size:14px;margin-bottom:4px">配置项</h3>
-      ${itemsHtml}
-      <button class="add-btn add-btn-sm" onclick="showNewItemModal('${esc(cfg.name)}',null)">&#10010; 添加配置项</button>
-    </div>
-    <div style="margin-top:24px">
       <h3 style="font-size:14px;margin-bottom:4px">节 (Sections)</h3>
-      ${secHtml || '<div class="text-muted" style="padding:8px 0">暂无节</div>'}
+      ${defaultSecHtml}
+      ${secHtml || ''}
       <button class="add-btn add-btn-sm" onclick="showNewSectionModal('${esc(cfg.name)}')">&#10010; 添加节</button>
     </div>
     <div style="margin-top:24px">
@@ -539,6 +545,16 @@ function renderSharedItemDetail() {
       <button class="btn-danger" style="height:34px;padding:0 20px;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:13px" onclick="deleteSharedItem('${esc(si.key)}')">&#128465; 删除</button>
     </div>
   </div>`;
+}
+
+function renameDefaultSection(configName) {
+  const cfg = state.configs.find(c => c.name === configName);
+  if (!cfg) return;
+  const current = cfg.default_section || '全局';
+  const name = prompt('重命名默认节名称:', current);
+  if (name && name.trim() && name.trim() !== current) {
+    updateConfig(configName, { default_section: name.trim() });
+  }
 }
 
 function renderSharedForConfig(configName) {
