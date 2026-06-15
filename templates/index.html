@@ -557,7 +557,7 @@ function renameDefaultSection(configName) {
   }
 }
 
-function saveSharedOverrides(configName) {
+async function saveSharedOverrides(configName) {
   const cfg = state.configs.find(c => c.name === configName);
   if (!cfg) return;
   const overrides = {};
@@ -570,7 +570,7 @@ function saveSharedOverrides(configName) {
       else overrides[si.key] = '';
     }
   }
-  updateConfig(configName, { shared_section_overrides: overrides });
+  await updateConfig(configName, { shared_section_overrides: overrides });
 }
 
 function renderSharedForConfig(configName) {
